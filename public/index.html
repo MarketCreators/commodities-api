@@ -1,0 +1,132 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans, system-ui, sans-serif); background: var(--color-background-tertiary); color: var(--color-text-primary); min-height: 100vh; }
+header { padding: 2rem 2rem 1rem; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); }
+header h1 { font-size: 20px; font-weight: 500; }
+header p { font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; }
+.container { max-width: 860px; margin: 2rem auto; padding: 0 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 2rem; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; position: relative; }
+.card.loading { opacity: 0.5; }
+.commodity-icon { font-size: 16px; width: 32px; height: 32px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.gold-icon   { background: #FAEEDA; color: #854F0B; }
+.silver-icon { background: #F1EFE8; color: #5F5E5A; }
+.oil-icon    { background: #FAECE7; color: #993C1D; }
+.commodity-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+.commodity-name  { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 12px; }
+.price { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; margin-bottom: 4px; }
+.change { font-size: 13px; font-weight: 500; }
+.change.up   { color: #3B6D11; }
+.change.down { color: #A32D2D; }
+.unit { font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: #3B6D11; position: absolute; top: 1.25rem; right: 1.25rem; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+.footer { font-size: 12px; color: var(--color-text-tertiary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.refresh-btn { font-size: 12px; padding: 6px 14px; background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); cursor: pointer; color: var(--color-text-secondary); }
+.refresh-btn:hover { background: var(--color-background-secondary); }
+.api-info { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-top: 1.5rem; }
+.api-info h3 { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+.endpoint { font-family: var(--font-mono, monospace); font-size: 12px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 6px 10px; margin: 4px 0; color: var(--color-text-secondary); display: block; }
+.method { display: inline-block; font-size: 10px; font-weight: 500; background: #EAF3DE; color: #3B6D11; padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
+.skeleton { background: var(--color-border-tertiary); border-radius: 4px; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
+</style>
+
+<header>
+  <h1>Commodities Market</h1>
+  <p>Live prices for gold, silver, and crude oil — powered by your API</p>
+</header>
+
+<div class="container">
+  <div class="grid" id="grid">
+    <div class="card loading" id="card-gold">
+      <div class="commodity-icon gold-icon">Au</div>
+      <div class="commodity-label">GOLD</div>
+      <div class="commodity-name">Gold Futures</div>
+      <div class="price skeleton" style="width:140px;height:32px;"></div>
+      <div class="change skeleton" style="width:90px;height:16px;margin-top:6px;"></div>
+      <div class="unit">USD / troy oz</div>
+      <div class="pulse"></div>
+    </div>
+    <div class="card loading" id="card-silver">
+      <div class="commodity-icon silver-icon">Ag</div>
+      <div class="commodity-label">SILVER</div>
+      <div class="commodity-name">Silver Futures</div>
+      <div class="price skeleton" style="width:120px;height:32px;"></div>
+      <div class="change skeleton" style="width:90px;height:16px;margin-top:6px;"></div>
+      <div class="unit">USD / troy oz</div>
+      <div class="pulse"></div>
+    </div>
+    <div class="card loading" id="card-crude_oil">
+      <div class="commodity-icon oil-icon">WTI</div>
+      <div class="commodity-label">CRUDE OIL</div>
+      <div class="commodity-name">WTI Futures</div>
+      <div class="price skeleton" style="width:120px;height:32px;"></div>
+      <div class="change skeleton" style="width:90px;height:16px;margin-top:6px;"></div>
+      <div class="unit">USD / barrel</div>
+      <div class="pulse"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span id="last-updated" style="color:var(--color-text-tertiary);font-size:12px;">Fetching data...</span>
+    <button class="refresh-btn" onclick="loadPrices()">Refresh prices</button>
+  </div>
+
+  <div class="api-info" style="margin-top:1.5rem;">
+    <h3>API endpoints</h3>
+    <span class="endpoint"><span class="method">GET</span>/prices</span>
+    <span class="endpoint"><span class="method">GET</span>/prices/gold</span>
+    <span class="endpoint"><span class="method">GET</span>/prices/silver</span>
+    <span class="endpoint"><span class="method">GET</span>/prices/crude_oil</span>
+  </div>
+</div>
+
+<script>
+const META = {
+  gold:      { label:"GOLD",      name:"Gold Futures",   icon:"Au",  iconClass:"gold-icon",   unit:"USD / troy oz" },
+  silver:    { label:"SILVER",    name:"Silver Futures", icon:"Ag",  iconClass:"silver-icon", unit:"USD / troy oz" },
+  crude_oil: { label:"CRUDE OIL", name:"WTI Futures",    icon:"WTI", iconClass:"oil-icon",    unit:"USD / barrel"  },
+};
+
+function renderCard(data) {
+  const m = META[data.commodity];
+  const up = data.change >= 0;
+  const sign = up ? "+" : "";
+  return `
+    <div class="commodity-icon ${m.iconClass}">${m.icon}</div>
+    <div class="commodity-label">${m.label}</div>
+    <div class="commodity-name">${m.name}</div>
+    <div class="price">$${data.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    <div class="change ${up?'up':'down'}">${sign}$${Math.abs(data.change).toFixed(2)} (${sign}${data.change_pct.toFixed(2)}%)</div>
+    <div class="unit">${m.unit}</div>
+    <div class="pulse" style="background:${up?'#3B6D11':'#A32D2D'}"></div>`;
+}
+
+async function loadPrices() {
+  document.getElementById("last-updated").textContent = "Refreshing...";
+  try {
+    // ← In production, replace with your deployed Vercel URL
+    const API_BASE = window.location.origin;
+    const res = await fetch(`${API_BASE}/prices`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const items = await res.json();
+    items.forEach(item => {
+      const card = document.getElementById(`card-${item.commodity}`);
+      if (!card) return;
+      card.classList.remove("loading");
+      card.innerHTML = renderCard(item);
+    });
+    const t = new Date();
+    document.getElementById("last-updated").textContent =
+      `Last updated: ${t.toLocaleTimeString()}`;
+  } catch(e) {
+    document.getElementById("last-updated").textContent =
+      "Error fetching prices — is the API running?";
+  }
+}
+
+loadPrices();
+setInterval(loadPrices, 60000);
+</script>

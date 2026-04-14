@@ -1,0 +1,22 @@
+[build]
+  publish = "public"
+  command = "pip install -r requirements.txt"
+
+[functions]
+  directory = "netlify/functions"
+  external_node_modules = []
+
+[[redirects]]
+  from = "/prices"
+  to = "/.netlify/functions/api/prices"
+  status = 200
+
+[[redirects]]
+  from = "/prices/*"
+  to = "/.netlify/functions/api/prices/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
