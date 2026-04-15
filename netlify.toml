@@ -1,10 +1,12 @@
 [build]
   publish = "public"
-  command = "pip install -r requirements.txt"
+  command = "pip3 install -r requirements.txt --target netlify/functions"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
 
 [functions]
   directory = "netlify/functions"
-  external_node_modules = []
 
 [[redirects]]
   from = "/prices"
@@ -14,6 +16,11 @@
 [[redirects]]
   from = "/prices/*"
   to = "/.netlify/functions/api/prices/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/cache/status"
+  to = "/.netlify/functions/api/cache/status"
   status = 200
 
 [[redirects]]
